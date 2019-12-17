@@ -189,7 +189,9 @@ class Forecast:
         try: 
             forecasting = json.dumps(forecasting, indent=4, separators=(',', ': '))
             forecasting = json.loads(forecasting)
+            
         except ValueError as e: 
+        
             print ("This is not a right json format") 
         
         # the algorithm called for forecasting
@@ -214,7 +216,7 @@ class Forecast:
                   # }
         return mydata
     
-    #
+    # prediction result call through the @property decorator
     def __results(self,):
         return self.__result
     
@@ -304,22 +306,14 @@ class Data_prep_pipeline:
         
         columns_todelete = [x for x in components_damages.columns.to_list() if str(x).endswith("lower_damage")|str(x).endswith("upper_damage")]
         components_damages.drop(columns_todelete, axis=1, inplace=True)
-        # components_damages_TRIM = components_damages[['_id', 'component_type_vehicle_id', \
-                                                      # 'damages_types', 'mileages','damages.1.damage', \
-                                                      # 'damages.12.damage', 'damages.13.damage', 'damages.14.damage']]
-                                                     
         components_damages_TRIM = components_damages
 
         row_expansion=pd.DataFrame.from_records(components_damages_TRIM.damages_types.tolist()).stack().reset_index(level=1, drop=True).rename('damages_types')
-        # components_damages_TRIM = components_damages_TRIM.drop('damages_types', axis=1).join(row_expansion).reset_index(drop=True)[['_id', 'component_type_vehicle_id', 'damages_types', \
-                                                                                                          # 'mileages','damages.1.damage', 'damages.12.damage', \
-                                                                                                          # 'damages.13.damage', 'damages.14.damage']]#.head(5)
-        #columns = components_damages.columns.to_list()                                                                                                  
+                                                                                                                 
         components_damages_TRIM = components_damages_TRIM.drop('damages_types', axis=1).join(row_expansion).reset_index(drop=True)[components_damages.columns.to_list()]#.head(5)
 
         result = vehicle_components.merge(components_damages_TRIM,how='inner', left_on=["component_type_vehicle_id"],right_on=["component_type_vehicle_id"])
-        
-        #return {"result":result,"vehicle_data":vehicle_data}
+                
         return [result,vehicle_data,components_damages]
     def __result(self,):
         
