@@ -103,26 +103,18 @@ class Mongodb_Connect:
     
 class Forecast:
 
-    def __init__(self,data=None):
+    def __init__(self,data=None, api_config= None):
     
-        self.__result = self.__forecast_checker(data=data)
+        self.__result = self.__forecast_checker(data=data, api_config= api_config)
     
     #sends damage data to the AICORE for forcasting    
-    def __algorithm(self, data, callback=None):
+    def __algorithm(self, data, callback=None,api_config=None):
         
         # TODO implement
-        env = Env()
-        env.read_env(".env.example", recurse=False)
-        
-        token = env("COMPREDICT_AI_CORE_KEY")
         callback_url = callback
-        fail_on_error = env("COMPREDICT_AI_CORE_FAIL_ON_ERROR", False)
-        ppk = env("COMPREDICT_AI_CORE_PPK", None)
-        passphrase = env("COMPREDICT_AI_CORE_PASSPHRASE", "")
-        base_url = env("COMPREDICT_AI_CORE_BASE_URL")
-
-        client = api.get_instance(token=token, callback_url=callback_url,base_url=base_url)
-        client.fail_on_error(option=fail_on_error)
+        
+        client = api.get_instance(token=api_config["COMPREDICT_AI_CORE_KEY"], callback_url=callback_url,base_url=api_config["COMPREDICT_AI_CORE_BASE_URL"])
+        client.fail_on_error(option=api_config["COMPREDICT_AI_CORE_FAIL_ON_ERROR"])
 
             # get a graph
             # algorithm = client.get_algorithm("auto-parameterization")
@@ -148,32 +140,16 @@ class Forecast:
         tmp.close()  # It is tmp file. close the file to remove it.
 
         results = algorithm.run(data, evaluate=False, encrypt=False)
-
-        if isinstance(results, resources.Task):
-           print(results.job_id)
-            
-           while results.status != results.STATUS_FINISHED:
-               print("task is not done yet.. waiting...")
-               sleep(15)
-               results.update()
-
-           if results.success is True:
-               print(results.predictions)
-           else:
-               print(results.error)
-
-        else:
-           print(results.predictions)
         
+        if isinstance(results, resources.Task):
+            print(results.job_id)
+            
         return results
         
-    # def __algorithm(self, data, callback=None):
-    
-        # return "8c6ace41-94dd-4d65-9cfa-a9bdd188e4ef"
-    
+        
     # forecasting function that returns the mydata to the caller
     # data is a series that contains Key-Value data for damages associated to each component for each car
-    def __forecast_checker(self,data=None):
+    def __forecast_checker(self,data=None, api_config=None):
         
         subscript = "damages.%s.damage"%(str(int(data["damages_types"]))) # get the damages_type and use the integer as automatic column for damages.#.damage column to select
         damages = list(data[subscript]) # damages.#.damage column to select in list 
@@ -195,25 +171,13 @@ class Forecast:
             print ("This is not a right json format") 
         
         # the algorithm called for forecasting
-        result = self.__algorithm(forecasting,callback_url)
+        result = self.__algorithm(forecasting,callback_url,api_config)
         
         # mixture of result from AICORE and damage component vehicle data    
         mydata = {"reference_id":result.job_id,
-                  "status":result.status,
-                  "success":False,
-                  "damage_type_id": data["damages_types"],
-                  "latest_trip_mileage": km[-1],
-                  "damage_id":data["idX"],
-                  "results":result.results}
+                  "status":"Pending",
+                  "success":False}
                   
-        # mydata = {"reference_id":result,#.job_id,
-                  # "status":"Pending",#result.status,
-                  # "success":False,
-                  # "damage_type_id": data["damages_types"],
-                  # "latest_trip_mileage": km[-1],
-                  # "damage_id":data["idX"],
-                  # "results":[]#result.results
-                  # }
         return mydata
     
     # prediction result call through the @property decorator
@@ -315,6 +279,7 @@ class Data_prep_pipeline:
         result = vehicle_components.merge(components_damages_TRIM,how='inner', left_on=["component_type_vehicle_id"],right_on=["component_type_vehicle_id"])
                 
         return [result,vehicle_data,components_damages]
+        
     def __result(self,):
         
         return self._data
