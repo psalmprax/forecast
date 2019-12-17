@@ -25,8 +25,8 @@ def lambda_handler(event, context):
     TABLE_4= env("TABLE_4")#"forecasting"#str(os.environ["table"])
     TABLE_5= env("TABLE_5")
 
-    components_damages,components_damages_TRIM,vehicle_components, \
-    check,data_mongodb,request_table,data,forecasting_table_data,result;table_update = {},{},{},{},{},{},{},{},{},{}
+    #components_damages,components_damages_TRIM,vehicle_components, \
+    check,data_mongodb,request_table,data,forecasting_table_data,result,table_update = {},{},{},{},{},{},{}
     count = 0
 
     tables = {"FORECASTING":TABLE_2,"REQUEST":TABLE_5}
@@ -98,23 +98,31 @@ def lambda_handler(event, context):
         try:
             if len(focast_check[focast_check["damage_id"]==forecasting_table_data["damage_id"]])>=1:
                 focast_check_temp = focast_check[focast_check["damage_id"]==forecasting_table_data["damage_id"]]
-                if len(focast_check_temp[focast_check_temp["latest_trip_mileage"]==forecasting_table_data["latest_trip_mileage"]])>=1:
                 
-                    print("this does not need update")
+                if len(focast_check_temp[focast_check_temp["damage_type_id"]==forecasting_table_data["damage_type_id"]])>=1:
+                
+                    if len(focast_check_temp[focast_check_temp["latest_trip_mileage"]==forecasting_table_data["latest_trip_mileage"]])>=1:
                     
-                else: 
-                    # update part to be implemented for testing purposes
-                    print("this does need update/FORECAST/REQUEST DATA INJECTION")
+                        print("this does not need update")
+                        
+                    else: 
+                        
+                        print("this does need update/FORECAST/REQUEST DATA INJECTION")
+                        postgresdb.insert=request
+                        
+                else:
+                
+                    check.insert = table_update
+                    print("FORECAST/REQUEST DATA INJECTION FOR EXISTING damage_id BUT NO damage_type_id FOUND SINGLE RECORD FIRST TIME")
                     postgresdb.insert=request
                     
             else:
-            
+                
                 check.insert = table_update
                 print("FORECAST/REQUEST DATA INJECTION FOR SINGLE RECORD FIRST TIME")
                 postgresdb.insert=request
-                
-        except:
         
+        except:
             check.insert = table_update
             print("FIRST FORECAST/REQUEST DATA INJECTION FOR ALL RECORDS FROM THE BEGINING")
             postgresdb.insert=request
