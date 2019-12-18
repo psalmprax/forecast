@@ -69,6 +69,7 @@ def lambda_handler(event, context):
     postgresdb = results[1]
     
     if data.empty==False: 
+    
         for index, row2 in data.iterrows():
             
             data_mongodb = Forecast(data=row2,api_config=api_config)
