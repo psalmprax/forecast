@@ -38,6 +38,7 @@ class Mongodb_Connect:
     
     # initialize connection to mongodb. Not accessible to the public
     def __mongodb_connect(self, host=None, database=None, table=None, data=None):
+        
         client = None
         try:
             client = pymongo.MongoClient(self._mongo_link,serverSelectionTimeoutMS=1)
