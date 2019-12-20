@@ -28,6 +28,7 @@ def lambda_handler(event, context):
     COMPREDICT_AI_CORE_PASSPHRASE = os.environ["COMPREDICT_AI_CORE_PASSPHRASE"]
     COMPREDICT_AI_CORE_BASE_URL = str(os.environ["COMPREDICT_AI_CORE_BASE_URL"])
     COMPREDICT_AI_CORE_CALLBACK_URL = str(os.environ["COMPREDICT_AI_CORE_CALLBACK"])
+    TIMEOUT = int(os.environ["TIMEOUT"])
     
     api_config = {"COMPREDICT_AI_CORE_KEY":COMPREDICT_AI_CORE_KEY, "COMPREDICT_AI_CORE_FAIL_ON_ERROR":COMPREDICT_AI_CORE_FAIL_ON_ERROR,"COMPREDICT_AI_CORE_PPK":COMPREDICT_AI_CORE_PPK, \
                  "COMPREDICT_AI_CORE_PASSPHRASE":COMPREDICT_AI_CORE_PASSPHRASE, "COMPREDICT_AI_CORE_BASE_URL":COMPREDICT_AI_CORE_BASE_URL, \
@@ -90,7 +91,7 @@ def lambda_handler(event, context):
         
         for index, row2 in data.iterrows():
             
-            if int(context.get_remaining_time_in_millis()/ 1000) < 2.0:
+            if int(context.get_remaining_time_in_millis()/ 1000) < TIMEOUT:
                 break
             
             forecast["data"] = row2
