@@ -80,11 +80,13 @@ class Mongodb_Connect:
     #get the insert_id
     #accessible through it's property interface        
     def __getter_insert(self,):
+        
         return self._data.inserted_id
     
     #delete all the record. need dynamic delete in the future
     #accessible through it's property interface
     def __delete(self,table=None):
+        
         table = self._connection["db"][table]
         self._data = table.delete_many({})
         return self._data
