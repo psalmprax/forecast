@@ -8,27 +8,31 @@ import sys
 import pandas as pd
 import datetime
 import ast
+from environs import Env
 from forecast_pipeline import *
 
 def lambda_handler(event, context):
 
     # Setup alarm for remaining runtime minus a second
-    signal.alarm(int(context.get_remaining_time_in_millis() / 1000) - 1)
+    #signal.alarm(int(context.get_remaining_time_in_millis() / 1000) - 1)
     
-    HOST = str(os.environ["HOST"])
-    USER = str(os.environ["USER"])
-    PASSWORD = str(os.environ["PASSWORD"])
-    PORT = int(os.environ["PORT"])
-    DATABASE = str(os.environ["DATABASE"])
-    BENCHMARK = int(os.environ["BENCHMARK"])
-
-    COMPREDICT_AI_CORE_KEY = str(os.environ["COMPREDICT_AI_CORE_KEY"])
-    COMPREDICT_AI_CORE_FAIL_ON_ERROR = ast.literal_eval(str(os.environ["COMPREDICT_AI_CORE_FAIL_ON_ERROR"]))
-    COMPREDICT_AI_CORE_PPK = os.environ["COMPREDICT_AI_CORE_PPK"]
-    COMPREDICT_AI_CORE_PASSPHRASE = os.environ["COMPREDICT_AI_CORE_PASSPHRASE"]
-    COMPREDICT_AI_CORE_BASE_URL = str(os.environ["COMPREDICT_AI_CORE_BASE_URL"])
-    COMPREDICT_AI_CORE_CALLBACK_URL = str(os.environ["COMPREDICT_AI_CORE_CALLBACK"])
-    TIMEOUT = int(os.environ["TIMEOUT"])
+    env = Env()
+    env.read_env()
+    
+    HOST = str(env("HOST"))
+    USER = str(env("USER"))
+    PASSWORD = str(env("PASSWORD"))
+    PORT = int(env("PORT"))
+    DATABASE = str(env("DATABASE"))
+    BENCHMARK = int(env("BENCHMARK"))
+    
+    COMPREDICT_AI_CORE_KEY = str(env("COMPREDICT_AI_CORE_KEY"))
+    COMPREDICT_AI_CORE_FAIL_ON_ERROR = ast.literal_eval(str(env("COMPREDICT_AI_CORE_FAIL_ON_ERROR")))
+    COMPREDICT_AI_CORE_PPK = env("COMPREDICT_AI_CORE_PPK")
+    COMPREDICT_AI_CORE_PASSPHRASE = env("COMPREDICT_AI_CORE_PASSPHRASE")
+    COMPREDICT_AI_CORE_BASE_URL = str(env("COMPREDICT_AI_CORE_BASE_URL"))
+    COMPREDICT_AI_CORE_CALLBACK_URL = str(env("COMPREDICT_AI_CORE_CALLBACK"))
+   
     
     api_config = {"COMPREDICT_AI_CORE_KEY":COMPREDICT_AI_CORE_KEY, "COMPREDICT_AI_CORE_FAIL_ON_ERROR":COMPREDICT_AI_CORE_FAIL_ON_ERROR,"COMPREDICT_AI_CORE_PPK":COMPREDICT_AI_CORE_PPK, \
                  "COMPREDICT_AI_CORE_PASSPHRASE":COMPREDICT_AI_CORE_PASSPHRASE, "COMPREDICT_AI_CORE_BASE_URL":COMPREDICT_AI_CORE_BASE_URL, \
@@ -79,8 +83,6 @@ def lambda_handler(event, context):
         data = results[0]
         
         
-    #check.select = tables["FORECASTING"]
-    #focast_check = json_normalize(list(check.select), max_level=20)
     postgresdb = results[1]
     
     forecast = dict()
@@ -91,10 +93,7 @@ def lambda_handler(event, context):
         
         for index, row2 in data.iterrows():
         
-            if int(context.get_remaining_time_in_millis()/ 1000) < TIMEOUT:
-                callback_param = dict(damage_id=row2["idX"] ,damage_type_id=int(row2["damages_types"]))
-                break
-            
+                    
             forecast["data"] = row2
             forecast["api_config"] = api_config
             data_forecast.forecast = forecast
