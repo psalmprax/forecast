@@ -40,6 +40,7 @@ class Mongodb_Connect:
     def __mongodb_connect(self, host=None, database=None, table=None, data=None):
         client = None
         try:
+        
             client = pymongo.MongoClient(self._mongo_link,serverSelectionTimeoutMS=1)
 
         #print(client.server_info())
@@ -58,6 +59,7 @@ class Mongodb_Connect:
         
         #user = users.find({"vehicle_id":vehcile_id})
         if tablename != None: 
+        
             table = self._connection["db"][tablename]
             self._data = table.find()
     
@@ -79,11 +81,13 @@ class Mongodb_Connect:
     #get the insert_id
     #accessible through it's property interface        
     def __getter_insert(self,):
+    
         return self._data.inserted_id
     
     #delete all the record. need dynamic delete in the future
     #accessible through it's property interface
     def __delete(self,table=None):
+    
         table = self._connection["db"][table]
         self._data = table.delete_many({})
         return self._data
@@ -131,6 +135,7 @@ class Forecast:
         results = algorithm.run(data, evaluate=False, encrypt=False, callback_param=callback)
         
         if isinstance(results, resources.Task):
+        
             print(results.job_id)
             
         return results
@@ -153,6 +158,7 @@ class Forecast:
                         
                     }
         try: 
+        
             forecasting = json.dumps(forecasting, sort_keys=True, indent=4, separators=(',', ': '))
             forecasting = json.loads(forecasting, strict=False)
             
@@ -163,13 +169,20 @@ class Forecast:
         # the algorithm called to forecast
         result = self.__algorithm(forecasting,callback_param,forecast["api_config"])
         
-        # mixture of result from AICORE and damage component vehicle data    
+        # mixture of result from AICORE and damage component vehicle data
+        # if result:
+            # mydata = {"reference_id":result.job_id,
+                    # "status":"Pending",
+                    # "success":False}
+        # else:
+            # mydata = None
+            
         mydata = {"reference_id":result.job_id,
                   "status":"Pending",
                   "success":False}
-        
+                  
         self.__result = mydata    
-        #return mydata
+        
     
     # prediction result call through the @property decorator
     def __results(self,):

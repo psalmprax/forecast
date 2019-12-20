@@ -28,6 +28,7 @@ def lambda_handler(event, context):
     COMPREDICT_AI_CORE_PASSPHRASE = os.environ["COMPREDICT_AI_CORE_PASSPHRASE"]
     COMPREDICT_AI_CORE_BASE_URL = str(os.environ["COMPREDICT_AI_CORE_BASE_URL"])
     COMPREDICT_AI_CORE_CALLBACK_URL = str(os.environ["COMPREDICT_AI_CORE_CALLBACK"])
+    TIMEOUT = int(os.environ["TIMEOUT"])
     
     api_config = {"COMPREDICT_AI_CORE_KEY":COMPREDICT_AI_CORE_KEY, "COMPREDICT_AI_CORE_FAIL_ON_ERROR":COMPREDICT_AI_CORE_FAIL_ON_ERROR,"COMPREDICT_AI_CORE_PPK":COMPREDICT_AI_CORE_PPK, \
                  "COMPREDICT_AI_CORE_PASSPHRASE":COMPREDICT_AI_CORE_PASSPHRASE, "COMPREDICT_AI_CORE_BASE_URL":COMPREDICT_AI_CORE_BASE_URL, \
@@ -38,7 +39,7 @@ def lambda_handler(event, context):
     tables = {"FORECASTING":"forecasting","REQUEST":"requests"}
     table_names = dict(COMPONENT_DAMAGES="component_damages", VEHICLES="vehicles", COMPONENT_TYPE_VEHICLE="component_type_vehicle")
     temp = []
-    
+    request_count,success_count,callback_param = 0,0,{}
     try:
     
         result = Data_prep_pipeline(host=HOST,user=USER,password=PASSWORD,port=PORT,database=DATABASE, tables=table_names)
@@ -78,8 +79,8 @@ def lambda_handler(event, context):
         data = results[0]
         
         
-    check.select = tables["FORECASTING"]
-    focast_check = json_normalize(list(check.select), max_level=20)
+    #check.select = tables["FORECASTING"]
+    #focast_check = json_normalize(list(check.select), max_level=20)
     postgresdb = results[1]
     
     forecast = dict()
@@ -89,14 +90,24 @@ def lambda_handler(event, context):
     if data.empty==False: 
         
         for index, row2 in data.iterrows():
-            
-            if int(context.get_remaining_time_in_millis()/ 1000) < 2.0:
+        
+            if int(context.get_remaining_time_in_millis()/ 1000) < TIMEOUT:
+                callback_param = dict(damage_id=row2["idX"] ,damage_type_id=int(row2["damages_types"]))
                 break
             
             forecast["data"] = row2
             forecast["api_config"] = api_config
             data_forecast.forecast = forecast
+                        
             data_mongodb = data_forecast.forecast
+            
+            if data_mongodb is not None:
+                success_count += 1
+                print("success_count: ",success_count)
+            else:
+                print("failed: ", callback_param)
+                continue
+                     
             request_table["job_id"]=data_mongodb["reference_id"]
             request_table["status"]=data_mongodb["status"]
             request_table["success"]=data_mongodb["success"]
@@ -107,12 +118,17 @@ def lambda_handler(event, context):
 
             request = dict(table=tables["REQUEST"],data=request_table) 
             postgresdb.insert=request
+            request_count += 1
+            print("request_count: ",request_count)
+            callback_param = None
+            
             print("FORECAST/REQUEST DATA INJECTION FOR SINGLE RECORD FIRST TIME")
             
     else:
 
         print("NO CHANGES FOR FORCASTING")
-
+        
+    print("callback_param: ", callback_param)
 
     check.close
     postgresdb.close
