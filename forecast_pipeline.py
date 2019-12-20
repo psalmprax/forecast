@@ -20,6 +20,8 @@ import pandas as pd
 import time
 from bson import ObjectId
 
+
+
 #Mongodb_Connect class has 4 functions decorated with @property select,insert,delete,close
 class Mongodb_Connect:
     
@@ -45,8 +47,7 @@ class Mongodb_Connect:
             
         # print error from the database connection
             print(err)
-            #self._data={}
-            
+        
         # Get the sampleDB database
         db = client[self._db_name]
         return {"db":db,"client":client}
@@ -100,20 +101,22 @@ class Mongodb_Connect:
     delete  = property(fget=None, fset=__delete, fdel=None,doc="I'm the 'Mongodb' insert property.")
     close  = property(fget=__close, fset=None, fdel=None,doc="I'm the 'Mongodb' insert property.")
     
-    
+   
+
+   
 class Forecast:
 
-    def __init__(self,data=None, api_config= None):
+    def __init__(self,):#data=None, api_config= None):
     
-        self.__result = self.__forecast_checker(data=data, api_config= api_config)
+        self.__result = None
     
     #sends damage data to the AICORE for forcasting    
     def __algorithm(self, data, callback=None,api_config=None):
         
         # TODO implement
-        callback_url = callback
+        callback_url = api_config["COMPREDICT_AI_CORE_CALLBACK_URL"]
         
-        client = api.get_instance(token=api_config["COMPREDICT_AI_CORE_KEY"], callback_url=callback_url,base_url=api_config["COMPREDICT_AI_CORE_BASE_URL"])
+        client = api.get_instance(token=api_config["COMPREDICT_AI_CORE_KEY"], callback_url=callback_url, url=api_config["COMPREDICT_AI_CORE_BASE_URL"])
         client.fail_on_error(option=api_config["COMPREDICT_AI_CORE_FAIL_ON_ERROR"])
 
             # get a graph
@@ -124,22 +127,8 @@ class Forecast:
             # graph.close()
 
 
-        algorithms = client.get_algorithms()
-
-        # Check if the user has algorithms to predict
-        if len(algorithms) == 0:
-            print("No algorithms to proceed!")
-            exit()
-
-        #algorithm = algorithms["base-damage-forecaster"]
-        algorithm = algorithms[0]
-
-        #print(data)
-
-        tmp = algorithm.get_detailed_template()
-        tmp.close()  # It is tmp file. close the file to remove it.
-
-        results = algorithm.run(data, evaluate=False, encrypt=False)
+        algorithm = client.get_algorithm("base-damage-forecaster")
+        results = algorithm.run(data, evaluate=False, encrypt=False, callback_param=callback)
         
         if isinstance(results, resources.Task):
             print(results.job_id)
@@ -149,42 +138,45 @@ class Forecast:
         
     # forecasting function that returns the mydata to the caller
     # data is a series that contains Key-Value data for damages associated to each component for each car
-    def __forecast_checker(self,data=None, api_config=None):
+    def __forecast_checker(self,forecast=None):#data=None, api_config=None):
         
-        subscript = "damages.%s.damage"%(str(int(data["damages_types"]))) # get the damages_type and use the integer as automatic column for damages.#.damage column to select
-        damages = list(data[subscript]) # damages.#.damage column to select in list 
-        km = list(data["mileages"]) # mileage in list
-        callback_url = dict(damage_id=data["idX"] ,damage_type_id=data["damages_types"]) # callback 
-        forecasting = {
-                            "data": {
-                                "damage":damages,
-                                "distance":km,
-                            }
-                      }
-
+        subscript = "damages.%s.damage"%(str(int(forecast["data"]["damages_types"]))) # get the damages_type and use the integer as automatic column for damages.#.damage column to select
+        damages = list(forecast["data"][subscript]) # (damages.#.damage) column to select in list 
+        km = list(forecast["data"]["mileages"]) # mileage in list format
+        callback_param = dict(damage_id=forecast["data"]["idX"] ,damage_type_id=int(forecast["data"]["damages_types"])) # callback 
+        
+        forecasting ={
+                        "data": {
+                            "damage": damages,
+                            "distance": km
+                        }
+                        
+                    }
         try: 
-            forecasting = json.dumps(forecasting, indent=4, separators=(',', ': '))
-            forecasting = json.loads(forecasting)
+            forecasting = json.dumps(forecasting, sort_keys=True, indent=4, separators=(',', ': '))
+            forecasting = json.loads(forecasting, strict=False)
             
         except ValueError as e: 
         
             print ("This is not a right json format") 
         
-        # the algorithm called for forecasting
-        result = self.__algorithm(forecasting,callback_url,api_config)
+        # the algorithm called to forecast
+        result = self.__algorithm(forecasting,callback_param,forecast["api_config"])
         
         # mixture of result from AICORE and damage component vehicle data    
         mydata = {"reference_id":result.job_id,
                   "status":"Pending",
                   "success":False}
-                  
-        return mydata
+        
+        self.__result = mydata    
+        #return mydata
     
     # prediction result call through the @property decorator
     def __results(self,):
+    
         return self.__result
     
-    forecast = property(__results,"I'm the 'forecast' property.")
+    forecast = property(fget=__results,fset=__forecast_checker,fdel=None,doc="I'm the 'forecast' property.")
     
     
     
@@ -192,6 +184,7 @@ class Forecast:
 class Postgres_Connect:
 
     def __init__(self,host=None, database=None, user=None, port=None,password=None):
+    
         self._db_name = database
         self._db_user = user
         self._db_host = host
@@ -200,17 +193,17 @@ class Postgres_Connect:
         self._result = {}
         self._result = self.__postgres_connect(host=self._db_host,user=self._db_user,password=self._db_pass,port=self._db_port,database=self._db_name)
         self.__data = None
+        
     def __postgres_connect(self,host=None,user=None,password=None,port=None,database=None):
         
         connection =  pg8000.connect(host=host,user=user,password=password,port=port,database=database)
 
-        # Print PostgreSQL Connection properties
+        # PostgreSQL Connection properties
         cursor = connection.cursor()
 
-        # Print PostgreSQL version
+        # PostgreSQL version
         cursor.execute("SELECT version();")
         record = cursor.fetchone()
-        #print("You are connected to - ", record,"********\n")
         
         #return [cursor,connection]
         return {"cursor":cursor,"connection":connection}
@@ -221,10 +214,13 @@ class Postgres_Connect:
         self._result["cursor"].execute(postgreSQL_select_Query)
         self.__data = rows = self._result["cursor"].fetchall()
         return rows
+        
     def __data(self,):
+    
         return self.__data
         
     def __insert(self,data=None):
+    
         col = list(data["data"].keys())
         val=list(data["data"].values())
         query_placeholders = ','.join(['%s'] * len(val))
@@ -246,6 +242,8 @@ class Postgres_Connect:
     insert = property(fset=__insert,fget=None,fdel=None,doc="I'm the 'Postgres_Connect insert' property.")
     close = property(fset=None,fget=__close,fdel=None,doc="I'm the 'Postgres_Connect close' property.")
 
+
+
 class Data_prep_pipeline:
 
     def __init__(self,host=None,user=None,password=None,port=None, database=None, tables=None):
@@ -262,8 +260,8 @@ class Data_prep_pipeline:
         
         vec,com = vehicle.iloc[:,[0,1,6]],component_type_vehicle.iloc[:,[0,1,2]]
         vec.columns,com.columns = ["vehicle_id","slug","user_id"], ["component_type_vehicle_id","component_type_id","vehicle_id"]
-        vehicle_components = vec.merge(com,how='inner', left_on=["vehicle_id"],right_on=["vehicle_id"])
-
+        vehicle_components = pd.merge(vec, com, on=["vehicle_id"], how='inner')
+        
         check = Mongodb_Connect(host=host, database=database,table=tables["COMPONENT_DAMAGES"])
         check.select=tables["COMPONENT_DAMAGES"]
         components_damages = json_normalize(list(check.select), max_level=20)
@@ -276,8 +274,7 @@ class Data_prep_pipeline:
                                                                                                                  
         components_damages_TRIM = components_damages_TRIM.drop('damages_types', axis=1).join(row_expansion).reset_index(drop=True)[components_damages.columns.to_list()]#.head(5)
 
-        result = vehicle_components.merge(components_damages_TRIM,how='inner', left_on=["component_type_vehicle_id"],right_on=["component_type_vehicle_id"])
-                
+        result =  pd.merge(vehicle_components, components_damages_TRIM, on=["component_type_vehicle_id"], how='inner')     
         return [result,vehicle_data,components_damages]
         
     def __result(self,):

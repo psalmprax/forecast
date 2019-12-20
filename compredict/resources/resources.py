@@ -7,8 +7,8 @@ class Algorithm(BaseResource):
         super().__init__(**kwargs)
         self._last_result = None
 
-    def run(self, data, evaluate=True, encrypt=False):
-        self._last_result = self.client.run_algorithm(self.id, data, evaluate, encrypt)
+    def run(self, data, **kwargs):
+        self._last_result = self.client.run_algorithm(self.id, data, **kwargs)
         return self.last_results
 
     def get_detailed_template(self, file_type='input'):

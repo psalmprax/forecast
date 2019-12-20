@@ -1,3 +1,0 @@
-# forecast job
-
-AWS Lambda
