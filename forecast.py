@@ -16,7 +16,7 @@ class Forecast:
 
     def __algorithm(self, data, callback=None):  # ,api_config=None):
 
-        print(callback)
+        print(callback, "This is where the problem comes from*******************************")
         algorithm = self.__client.get_algorithm("base-damage-forecaster")
         results = algorithm.run(data, evaluate=False, encrypt=False, callback_param=callback)
 
@@ -46,12 +46,16 @@ class Forecast:
             }
 
         }
+
         try:
             # forecasting = json.dumps(forecasting, sort_keys=True, indent=4, separators=(',', ': '))
             # forecasting = json.loads(forecasting, strict=False)
+            print(forecasting)
 
             forecasting = json.dumps(forecasting, sort_keys=True, indent=4, separators=(',', ': '))
-            forecasting = json.loads(forecasting, strict=False)
+            print(forecasting)
+            # forecasting = json.loads(forecasting, strict=True)
+            # print(forecasting)
 
         except ValueError as e:
             print("This is not a right json format")

@@ -1,4 +1,4 @@
-from datetime import datetime
+import datetime
 
 import pandas as pd
 from environs import Env
@@ -16,12 +16,12 @@ def lambda_handler():
     env = Env()
     env.read_env()
 
-    api_config = {"COMPREDICT_AI_CORE_KEY": env('COMPREDICT_AI_CORE_KEY'),
-                  "COMPREDICT_AI_CORE_FAIL_ON_ERROR": env('COMPREDICT_AI_CORE_FAIL_ON_ERROR'),
-                  "COMPREDICT_AI_CORE_PPK": env('COMPREDICT_AI_CORE_PPK'),
-                  "COMPREDICT_AI_CORE_PASSPHRASE": env('COMPREDICT_AI_CORE_PASSPHRASE', ''),
-                  "COMPREDICT_AI_CORE_BASE_URL": env('COMPREDICT_AI_CORE_BASE_URL'),
-                  "COMPREDICT_AI_CORE_CALLBACK_URL": env('COMPREDICT_AI_CORE_CALLBACK_URL')}
+    api_config = {"COMPREDICT_AI_CORE_KEY": env("COMPREDICT_AI_CORE_KEY"),
+                  "COMPREDICT_AI_CORE_FAIL_ON_ERROR": env("COMPREDICT_AI_CORE_FAIL_ON_ERROR", False),
+                  "COMPREDICT_AI_CORE_PPK": env("COMPREDICT_AI_CORE_PPK", None),
+                  "COMPREDICT_AI_CORE_PASSPHRASE": env("COMPREDICT_AI_CORE_PASSPHRASE", ""),
+                  "COMPREDICT_AI_CORE_BASE_URL": env("COMPREDICT_AI_CORE_BASE_URL"),
+                  "COMPREDICT_AI_CORE_CALLBACK_URL": env("COMPREDICT_AI_CORE_CALLBACK_URL")}
 
     check, data_mongodb, request_table, data, forecasting_table_data, result, forcaster = {}, {}, {}, {}, {}, {}, {}
 

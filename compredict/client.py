@@ -145,7 +145,7 @@ class api:
         if encrypt:
             data = self.RSA_encrypt(data)
         files = {"features": ('features.json', data)}
-        response = self.connection.POST('/algorithms/{}/predict2'.format(algorithm_id), data=params, files=files)
+        response = self.connection.POST('/algorithms/{}/predict'.format(algorithm_id), data=params, files=files)
         resource = 'Task' if response is not False and 'job_id' in response else 'Result'
         return self.__map_resource(resource, response)
 
