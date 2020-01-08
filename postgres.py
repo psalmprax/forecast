@@ -1,7 +1,7 @@
-# import pg8000 as pg8000
+import pg8000 as pg8000
 
 
-import psycopg2 as pg8000
+# import psycopg2 as pg8000
 
 
 class Postgres_Connect:
@@ -22,23 +22,11 @@ class Postgres_Connect:
 
     @staticmethod
     def postgres_connect(host=None, user=None, password=None, port=None, database=None):
-        # connection = pg8000.connect(host=host, user=user, password=password, port=port, database=database)
-        # cursor = connection.cursor()
-        # cursor.execute("SELECT version();")
-        # record = cursor.fetchone()
-        #
-        # return {"cursor": cursor, "connection": connection}
-
         connection = pg8000.connect(host=host, user=user, password=password, port=port, database=database)
-
-        # PostgreSQL Connection properties
         cursor = connection.cursor()
-
-        # PostgreSQL version
         cursor.execute("SELECT version();")
         record = cursor.fetchone()
 
-        # return [cursor,connection]
         return {"cursor": cursor, "connection": connection}
 
     def select(self, table=None):
@@ -54,6 +42,7 @@ class Postgres_Connect:
         query_columns = ', '.join(col)
         insert_query = ''' INSERT INTO public.%s(%s) VALUES(%s) ''' % (data["table"], query_columns, query_placeholders)
         insert_query = insert_query
+        print(insert_query)
         self._result["cursor"].execute(insert_query, val)
         self._result["connection"].commit()
 

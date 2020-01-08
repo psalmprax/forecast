@@ -11,3 +11,6 @@ COMPREDICT_AI_CORE_PPK = None
 COMPREDICT_AI_CORE_PASSPHRASE = ""
 COMPREDICT_AI_CORE_BASE_URL = "https://b.aic.compredict.de/api/v1"
 COMPREDICT_AI_CORE_CALLBACK_URL = "http://beta.analytics.compredict.de/api/v1/forecast/callback"
+
+
+

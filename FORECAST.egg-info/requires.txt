@@ -1,0 +1,4 @@
+pg8000
+pandas
+pymongo
+environs

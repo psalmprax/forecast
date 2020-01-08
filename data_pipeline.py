@@ -8,11 +8,13 @@ from postgres import Postgres_Connect
 class Data_prep_pipeline:
 
     def __init__(self, host=None, user=None, password=None, port=None, database=None, tables=None):
+
         self._data = self.data_prep(host=host, user=user, password=password, port=port, database=database,
                                     tables=tables)
 
     @staticmethod
     def data_prep(host=None, user=None, password=None, port=None, database=None, tables=None):
+
         print(host, user, password, port, database, tables)
 
         vehicle_data = Postgres_Connect(host=host, user=user, password=password, port=port, database=database)
@@ -37,8 +39,7 @@ class Data_prep_pipeline:
         row_expansion = pd.DataFrame.from_records(components_damages_TRIM.damages_types.tolist()).stack().reset_index(
             level=1, drop=True).rename('damages_types')
 
-        components_damages_TRIM = \
-        components_damages_TRIM.drop('damages_types', axis=1).join(row_expansion).reset_index(drop=True)[
+        components_damages_TRIM = components_damages_TRIM.drop('damages_types', axis=1).join(row_expansion).reset_index(drop=True)[
             components_damages.columns.to_list()]  # .head(5)
 
         result = pd.merge(vehicle_components, components_damages_TRIM, on=["component_type_vehicle_id"], how='inner')
@@ -46,4 +47,5 @@ class Data_prep_pipeline:
         return [result, vehicle_data, components_damages]
 
     def result(self, ):
+
         return self._data

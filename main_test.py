@@ -117,7 +117,7 @@ def lambda_handler():
     # check.close
     # postgresdb.close
 
-    return data
+    # return data
 
 
 # if __name__ == 'main':
