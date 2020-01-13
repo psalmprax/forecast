@@ -27,8 +27,18 @@ class Forecast:
         #     print(results.job_id)
         if isinstance(results, resources.Task):
             print(results.job_id)
-
-        # return results
+        #     while results.status != results.STATUS_FINISHED:
+        #         print("task is not done yet.. waiting...")
+        #         sleep(15)
+        #         results.update()
+        #
+        #     if results.success is True:
+        #         print(results.predictions)
+        #     else:
+        #         print(results.error)
+        #
+        # else:
+        #     print(results.predictions)
 
         return results
 
@@ -37,28 +47,16 @@ class Forecast:
         subscript = "damages.%s.damage" % (str(int(forecast["data"]["damages_types"])))
         damages = list(forecast["data"][subscript])
         km = list(forecast["data"]["mileages"])
-        callback_param = dict(damage_id=forecast["data"]["idX"], damage_type_id=int(forecast["data"]["damages_types"]))
+        callback_param = dict(damage_id=forecast["data"]["idX"], damage_type_id=int(forecast["data"]["damages_types"]),
+                              update_date_at=json.dumps(forecast["data"]["updated_at"], indent=4, sort_keys=True, default=str))
 
         forecasting = {
-            "data": {
-                "damage": damages,
-                "distance": km
+            'data': {
+                'damage': damages,
+                'distance': km
             }
 
         }
-
-        try:
-            # forecasting = json.dumps(forecasting, sort_keys=True, indent=4, separators=(',', ': '))
-            # forecasting = json.loads(forecasting, strict=False)
-            print(forecasting)
-
-            forecasting = json.dumps(forecasting, sort_keys=True, indent=4, separators=(',', ': '))
-            print(forecasting)
-            # forecasting = json.loads(forecasting, strict=True)
-            # print(forecasting)
-
-        except ValueError as e:
-            print("This is not a right json format")
 
         result = self.__algorithm(forecasting, callback_param)  # ,forecast["api_config"])
 

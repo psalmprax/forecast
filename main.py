@@ -26,8 +26,6 @@ def lambda_handler():
     check, data_mongodb, request_table, data, forecasting_table_data, result, forcaster = {}, {}, {}, {}, {}, {}, {}
 
     print(api_config)
-    #
-    # print(HOST)
 
     tables = {"FORECASTING": "forecasting", "REQUEST": "requests"}
     table_names = dict(COMPONENT_DAMAGES="component_damages", VEHICLES="vehicles",
@@ -43,7 +41,8 @@ def lambda_handler():
 
     results[0].rename(columns={'_id': 'idX'}, inplace=True)
     results[0]['idX'] = results[0]['idX'].astype('str')
-    print("TEsting")
+
+    print(results[0])
 
     check = Mongodb_Connect(host=env('HOST'), database=env('DATABASE'), table=tables["FORECASTING"])
 
@@ -66,11 +65,12 @@ def lambda_handler():
 
             data.fillna(0, inplace=True)
 
-            data = data[(data['Max_Km'] - data['latest_trip_mileage']) > env('BENCHMARK')]
+            # data = data[(data['Max_Km'] - data['latest_trip_mileage']) > env('BENCHMARK')]
+            data = data[(data['Max_Km'] - data['latest_trip_mileage']) > env('BENCHMARK') & (
+                        data['udpated_at'] > data['udpate_date_at'])]
 
     except:
 
-        print("Startingforthefirsttime!!!")
         data = results[0]
 
     postgresdb = results[1]
@@ -79,7 +79,8 @@ def lambda_handler():
     data_forecast = Forecast(api_config)
 
     count = 0
-    if data.empty==False:
+
+    if not data.empty:
 
         for index, row2 in data.iterrows():
 
@@ -100,6 +101,7 @@ def lambda_handler():
             request_table["status"] = data_mongodb["status"]
             request_table["success"] = data_mongodb["success"]
             request_table["notify"] = False
+            request_table["errors"] = 0  # todo this should be removed in production
             request_table["user_id"] = row2["user_id"]
             request_table["created_at"] = datetime.datetime.now()
             request_table["algorithm"] = "forecasting"
@@ -112,6 +114,10 @@ def lambda_handler():
             callback_param = None
 
             print("FORECAST/REQUEST DATA INJECTION FOR SINGLE RECORD FIRST TIME")
+
+            # table_data = dict(TABLE=tables["FORECASTING"], DATA=data_mongodb)
+            # check.insert(table_data=table_data)
+
             count += 1
             if count == 2:
                 break
@@ -123,8 +129,8 @@ def lambda_handler():
 
     print("callback_param: ", callback_param)
 
-    check.close
-    postgresdb.close
+    check.close()
+    postgresdb.close()
 
     return data
 

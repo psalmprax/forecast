@@ -1,9 +1,6 @@
 import pg8000 as pg8000
 
 
-# import psycopg2 as pg8000
-
-
 class Postgres_Connect:
 
     def __init__(self, host=None, database=None, user=None, port=None, password=None):
@@ -14,7 +11,6 @@ class Postgres_Connect:
         self._db_pass = password
         self._result = {}
 
-        print(self._db_host, self._db_user, self._db_pass, self._db_port, self._db_name)
         self._result = self.postgres_connect(host=self._db_host, user=self._db_user, password=self._db_pass,
                                              port=self._db_port, database=self._db_name)
 
@@ -41,8 +37,6 @@ class Postgres_Connect:
         query_placeholders = ','.join(['%s'] * len(val))
         query_columns = ', '.join(col)
         insert_query = ''' INSERT INTO public.%s(%s) VALUES(%s) ''' % (data["table"], query_columns, query_placeholders)
-        insert_query = insert_query
-        print(insert_query)
         self._result["cursor"].execute(insert_query, val)
         self._result["connection"].commit()
 
