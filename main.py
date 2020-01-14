@@ -41,7 +41,7 @@ def lambda_handler():
     results[0]['idX'] = results[0]['idX'].astype('str')
 
     check = Mongodb_Connect(host=env('HOST'), database=env('DATABASE'), table=tables["FORECASTING"])
-
+    
     try:
         forcaster = check.select(tables["FORECASTING"])
         if forcaster != {}:
@@ -67,6 +67,8 @@ def lambda_handler():
 
             data = data[(data['Max_Km'] - data['latest_trip_mileage']) > int(env('BENCHMARK'))]
             data = data[(data['updated_at'] - data['update_date_at']).dt.total_seconds() / 3600 > 0]
+            data.sort_values(by=['updated_at'], inplace=True, ascending=False)
+            print(data.head())
 
     except:
 
@@ -79,9 +81,9 @@ def lambda_handler():
 
     if not data.empty:
 
-        for index, row2 in data.iterrows():
+        for index, row in data.iterrows():
 
-            forecast["data"] = row2
+            forecast["data"] = row
             data_forecast.forecast_checker(forecast=forecast)
 
             data_mongodb = data_forecast.results()
@@ -94,7 +96,7 @@ def lambda_handler():
                 continue
 
             request_table = dict(job_id=data_mongodb["reference_id"], status=data_mongodb["status"],
-                                 success=data_mongodb["success"], notify=False, user_id=row2["user_id"],
+                                 success=data_mongodb["success"], notify=False, user_id=row["user_id"],
                                  created_at=datetime.datetime.now(), algorithm="forecasting")
 
             request = dict(table=tables["REQUEST"], data=request_table)
