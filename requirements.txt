@@ -1,4 +1,0 @@
-pycrypto==1.4.1  # https://pypi.org/project/pycrypto/
-requests==2.20.1  # https://github.com/requests/requests
-#https://stackoverflow.com/questions/54467095/module-initialization-error-cannot-load-native-module-crypto-cipher-raw-ecb
-#https://github.com/grmagalhaes/python-utilities
