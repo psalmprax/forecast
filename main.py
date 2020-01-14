@@ -95,13 +95,17 @@ def lambda_handler():
                 print("failed: ", callback_param)
                 continue
 
-            request_table["job_id"] = data_mongodb["reference_id"]
-            request_table["status"] = data_mongodb["status"]
-            request_table["success"] = data_mongodb["success"]
-            request_table["notify"] = False
-            request_table["user_id"] = row2["user_id"]
-            request_table["created_at"] = datetime.datetime.now()
-            request_table["algorithm"] = "forecasting"
+            request_table = dict(job_id=data_mongodb["reference_id"], status=data_mongodb["status"],
+                                 success=data_mongodb["success"], notify=False, user_id=row2["user_id"],
+                                 created_at=datetime.datetime.now(), algorithm="forecasting")
+
+            # request_table["job_id"] = data_mongodb["reference_id"]
+            # request_table["status"] = data_mongodb["status"]
+            # request_table["success"] = data_mongodb["success"]
+            # request_table["notify"] = False
+            # request_table["user_id"] = row2["user_id"]
+            # request_table["created_at"] = datetime.datetime.now()
+            # request_table["algorithm"] = "forecasting"
 
             request = dict(table=tables["REQUEST"], data=request_table)
             print(request)
