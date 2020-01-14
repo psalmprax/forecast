@@ -1,3 +1,0 @@
-compredict
-examples
-tests

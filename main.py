@@ -25,8 +25,6 @@ def lambda_handler():
 
     check, data_mongodb, request_table, data, forecasting_table_data, result, forcaster = {}, {}, {}, {}, {}, {}, {}
 
-    print(api_config)
-
     tables = {"FORECASTING": "forecasting", "REQUEST": "requests"}
     table_names = dict(COMPONENT_DAMAGES="component_damages", VEHICLES="vehicles",
                        COMPONENT_TYPE_VEHICLE="component_type_vehicle")
@@ -42,8 +40,6 @@ def lambda_handler():
     results[0].rename(columns={'_id': 'idX'}, inplace=True)
     results[0]['idX'] = results[0]['idX'].astype('str')
 
-    print(results[0])
-
     check = Mongodb_Connect(host=env('HOST'), database=env('DATABASE'), table=tables["FORECASTING"])
 
     try:
@@ -58,16 +54,19 @@ def lambda_handler():
 
             for x, row in forcasting.iterrows():
                 forcasting.at[x, 'latest_trip_mileage'] = row["results.mileage"][0]
+                forcasting.at[x, 'update_date_at'] = eval(str(row["update_date_at"]).strip())
             for x, row in results[0].iterrows():
                 results[0].at[x, 'Max_Km'] = row["mileages"][-1]
 
             data = pd.merge(results[0], forcasting, on=['idX', 'damages_types'], how='left')
 
-            data.fillna(0, inplace=True)
+            data['update_date_at'].fillna('1900-01-01 00:00:00', inplace=True)
 
-            # data = data[(data['Max_Km'] - data['latest_trip_mileage']) > env('BENCHMARK')]
-            data = data[(data['Max_Km'] - data['latest_trip_mileage']) > env('BENCHMARK') & (
-                        data['udpated_at'] > data['udpate_date_at'])]
+            data.fillna(0, inplace=True)
+            data['update_date_at'] = pd.to_datetime(data['update_date_at'])
+
+            data = data[(data['Max_Km'] - data['latest_trip_mileage']) > int(env('BENCHMARK'))]
+            data = data[(data['updated_at'] - data['update_date_at']).dt.total_seconds() / 3600 > 0]
 
     except:
 
@@ -85,7 +84,6 @@ def lambda_handler():
         for index, row2 in data.iterrows():
 
             forecast["data"] = row2
-            # forecast["api_config"] = api_config
             data_forecast.forecast_checker(forecast=forecast)
 
             data_mongodb = data_forecast.results()
@@ -101,7 +99,6 @@ def lambda_handler():
             request_table["status"] = data_mongodb["status"]
             request_table["success"] = data_mongodb["success"]
             request_table["notify"] = False
-            request_table["errors"] = 0  # todo this should be removed in production
             request_table["user_id"] = row2["user_id"]
             request_table["created_at"] = datetime.datetime.now()
             request_table["algorithm"] = "forecasting"
@@ -115,13 +112,9 @@ def lambda_handler():
 
             print("FORECAST/REQUEST DATA INJECTION FOR SINGLE RECORD FIRST TIME")
 
-            # table_data = dict(TABLE=tables["FORECASTING"], DATA=data_mongodb)
-            # check.insert(table_data=table_data)
-
             count += 1
             if count == 2:
                 break
-
 
     else:
 
@@ -135,5 +128,4 @@ def lambda_handler():
     return data
 
 
-# if __name__ == 'main':
 print(lambda_handler())

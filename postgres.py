@@ -21,7 +21,6 @@ class Postgres_Connect:
         connection = pg8000.connect(host=host, user=user, password=password, port=port, database=database)
         cursor = connection.cursor()
         cursor.execute("SELECT version();")
-        record = cursor.fetchone()
 
         return {"cursor": cursor, "connection": connection}
 
