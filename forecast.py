@@ -6,7 +6,7 @@ from compredict.resources import resources
 
 class Forecast:
 
-    def __init__(self, api_config=None):  # data=None, api_config= None):
+    def __init__(self, api_config=None):
 
         self.__result = None
         self.__client = api.get_instance(token=api_config["COMPREDICT_AI_CORE_KEY"],
@@ -27,7 +27,7 @@ class Forecast:
 
         return results
 
-    def forecast_checker(self, forecast=None):  # data=None, api_config=None):
+    def forecast_checker(self, forecast=None):
 
         subscript = "damages.%s.damage" % (str(int(forecast["data"]["damages_types"])))
         damages = list(forecast["data"][subscript])
@@ -44,7 +44,7 @@ class Forecast:
 
         }
 
-        result = self.__algorithm(forecasting, callback_param)  # ,forecast["api_config"])
+        result = self.__algorithm(forecasting, callback_param)
 
         mydata = {"reference_id": result.job_id,
                   "status": "Pending",

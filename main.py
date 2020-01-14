@@ -41,7 +41,7 @@ def lambda_handler():
     results[0]['idX'] = results[0]['idX'].astype('str')
 
     check = Mongodb_Connect(host=env('HOST'), database=env('DATABASE'), table=tables["FORECASTING"])
-    
+
     try:
         forcaster = check.select(tables["FORECASTING"])
         if forcaster != {}:
