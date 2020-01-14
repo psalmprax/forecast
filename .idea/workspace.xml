@@ -2,8 +2,8 @@
 <project version="4">
   <component name="ChangeListManager">
     <list default="true" id="7f5c3fbc-7d40-417b-b264-61bab84f2d17" name="Default Changelist" comment="pycharm 2 commit">
-      <change beforePath="$PROJECT_DIR$/forecast.egg-info/PKG-INFO" beforeDir="false" afterPath="$PROJECT_DIR$/forecast.egg-info/PKG-INFO" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/setup.py" beforeDir="false" afterPath="$PROJECT_DIR$/setup.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/forecast.py" beforeDir="false" afterPath="$PROJECT_DIR$/forecast.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/main.py" beforeDir="false" afterPath="$PROJECT_DIR$/main.py" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />

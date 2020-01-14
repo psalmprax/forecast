@@ -90,7 +90,7 @@ def lambda_handler():
                 success_count += 1
                 print("success_count: ", success_count)
             else:
-                print("failed: ", callback_param)
+                print("failed: ", data_mongodb["callback_param"])
                 continue
 
             request_table = dict(job_id=data_mongodb["reference_id"], status=data_mongodb["status"],
@@ -102,7 +102,7 @@ def lambda_handler():
             postgresdb.insert(data=request)
             request_count += 1
             print("request_count: ", request_count)
-            callback_param = None
+            callback_param = data_mongodb["callback_param"]
 
             print("FORECAST/REQUEST DATA INJECTION FOR SINGLE RECORD FIRST TIME")
 

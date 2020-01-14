@@ -48,7 +48,8 @@ class Forecast:
 
         mydata = {"reference_id": result.job_id,
                   "status": "Pending",
-                  "success": False}
+                  "success": False,
+                  "callback_param": callback_param}
 
         self.__result = mydata
 
