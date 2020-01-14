@@ -77,8 +77,6 @@ def lambda_handler():
     forecast = dict()
     data_forecast = Forecast(api_config)
 
-    count = 0
-
     if not data.empty:
 
         for index, row2 in data.iterrows():
@@ -107,10 +105,6 @@ def lambda_handler():
             callback_param = None
 
             print("FORECAST/REQUEST DATA INJECTION FOR SINGLE RECORD FIRST TIME")
-
-            count += 1
-            if count == 2:
-                break
 
     else:
 
