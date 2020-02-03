@@ -3,10 +3,9 @@ import pymongo as pymongo
 
 class Mongodb_Connect:
 
-    def __init__(self, host=None, database=None, table=None):
+    def __init__(self, host=None, database=None):
 
         self._db_name = database
-        self._db_table = table
         self._db_host = host
         self._mongo_link = 'mongodb://{}:27017/'.format(self._db_host)
         self._connection = {}

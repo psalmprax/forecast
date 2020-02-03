@@ -3,7 +3,7 @@ import signal
 import sys
 import time
 
-from processes import ForecastPipelineProcess
+from processes_test import ForecastPipelineProcess
 
 
 def sigterm_handler():
@@ -12,20 +12,23 @@ def sigterm_handler():
 
 
 def lambda_handler(event, context):
-    TIMEOUT = int(os.environ["TIMEOUT"])
     signal.signal(signal.SIGTERM, sigterm_handler)
-    signal.alarm(TIMEOUT)
-
+    TIMEOUT = int(os.environ["TIMEOUT"])
     start = time.time()
     try:
         forecastpipeline = ForecastPipelineProcess()
         # forecastpipeline.process()
-        forecastpipeline.forecast()
+        # forecastpipeline.forecast()
+        data = forecastpipeline.process()[1]
+        for i, row in data.iterrows():
+            if (context.get_remaining_time_in_millis() / 1000) <= 10:
+                signal.alarm(0)
+            print(row)
+
         duration = time.time() - start
+
         print('Duration: %.2f' % duration)
     except:
         duration = time.time() - start
         print('Duration: %.2f' % duration)
         raise
-
-
