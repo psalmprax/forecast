@@ -1,34 +1,27 @@
-import os
-import signal
-import sys
-import time
-
 from processes_test import ForecastPipelineProcess
 
 
-def sigterm_handler():
-    # Raises SystemExit(0):
-    sys.exit(0)
+def lambda_handler(event=None, context=None):
+    HOST = "35.156.104.103"
+    USER = "postgres"
+    PASSWORD = "secret"
+    PORT = 5432
+    DATABASE = "analytics_v2"
 
-
-def lambda_handler(event, context):
-    signal.signal(signal.SIGTERM, sigterm_handler)
-    TIMEOUT = int(os.environ["TIMEOUT"])
-    start = time.time()
+    forecastpipeline = ForecastPipelineProcess()
     try:
-        forecastpipeline = ForecastPipelineProcess()
-        # forecastpipeline.process()
-        # forecastpipeline.forecast()
-        data = forecastpipeline.process()[1]
-        for i, row in data.iterrows():
-            if (context.get_remaining_time_in_millis() / 1000) <= 10:
-                signal.alarm(0)
-            print(row)
-
-        duration = time.time() - start
-
-        print('Duration: %.2f' % duration)
+        connection = forecastpipeline.dbconnection(HOST=HOST, USER=USER, PASSWORD=PASSWORD, PORT=PORT,
+                                                   DATABASE=DATABASE)
     except:
-        duration = time.time() - start
-        print('Duration: %.2f' % duration)
-        raise
+        print("Database Connection Error")
+
+    try:
+        data = forecastpipeline.process(connection=connection)
+        forecastpipeline.forecast(context=context, processdata=data)
+    except Exception as e:
+        print(e)
+    finally:
+        connection[0].close()
+        connection[1].result()[1].close()
+
+# print(lambda_handler())

@@ -37,7 +37,7 @@ class Data_prep_pipeline:
                 components_damages.columns.to_list()]  # .head(5)
 
         result = pd.merge(vehicle_components, components_damages_TRIM, on=["component_type_vehicle_id"], how='inner')
-
+        self._check.close()
         return [result, self._vehicle_data, components_damages]
 
     def result(self, ):

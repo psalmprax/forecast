@@ -2,6 +2,7 @@
   <dictionary name="COMPREDICT">
     <words>
       <w>compredict</w>
+      <w>dbconnection</w>
       <w>forcaster</w>
       <w>forcasting</w>
       <w>forecastpipeline</w>
@@ -9,6 +10,7 @@
       <w>postgresdb</w>
       <w>processdata</w>
       <w>tablename</w>
+      <w>todelete</w>
     </words>
   </dictionary>
 </component>

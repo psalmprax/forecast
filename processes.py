@@ -1,25 +1,31 @@
+import ast
 import datetime
+import os
 
 import pandas as pd
 from data_pipeline import Data_prep_pipeline
-from environs import Env
 from forecast import Forecast
 from mongodb import Mongodb_Connect
 from pandas.io.json import json_normalize
 
 
-class ForecastPipelineProcess():
+class ForecastPipelineProcess:
 
     def __init__(self):
-        self.env = Env()
-        self.env.read_env()
 
-        self.api_config = {"COMPREDICT_AI_CORE_KEY": self.env("COMPREDICT_AI_CORE_KEY"),
-                           "COMPREDICT_AI_CORE_FAIL_ON_ERROR": self.env("COMPREDICT_AI_CORE_FAIL_ON_ERROR", False),
-                           "COMPREDICT_AI_CORE_PPK": self.env("COMPREDICT_AI_CORE_PPK", None),
-                           "COMPREDICT_AI_CORE_PASSPHRASE": self.env("COMPREDICT_AI_CORE_PASSPHRASE", ""),
-                           "COMPREDICT_AI_CORE_BASE_URL": self.env("COMPREDICT_AI_CORE_BASE_URL"),
-                           "COMPREDICT_AI_CORE_CALLBACK_URL": self.env("COMPREDICT_AI_CORE_CALLBACK_URL")}
+        COMPREDICT_AI_CORE_KEY = str(os.environ["COMPREDICT_AI_CORE_KEY"])
+        COMPREDICT_AI_CORE_FAIL_ON_ERROR = ast.literal_eval(str(os.environ["COMPREDICT_AI_CORE_FAIL_ON_ERROR"]))
+        COMPREDICT_AI_CORE_PPK = os.environ["COMPREDICT_AI_CORE_PPK"]
+        COMPREDICT_AI_CORE_PASSPHRASE = os.environ["COMPREDICT_AI_CORE_PASSPHRASE"]
+        COMPREDICT_AI_CORE_BASE_URL = str(os.environ["COMPREDICT_AI_CORE_BASE_URL"])
+        COMPREDICT_AI_CORE_CALLBACK_URL = str(os.environ["COMPREDICT_AI_CORE_CALLBACK"])
+
+        self.api_config = {"COMPREDICT_AI_CORE_KEY": COMPREDICT_AI_CORE_KEY,
+                           "COMPREDICT_AI_CORE_FAIL_ON_ERROR": COMPREDICT_AI_CORE_FAIL_ON_ERROR,
+                           "COMPREDICT_AI_CORE_PPK": COMPREDICT_AI_CORE_PPK,
+                           "COMPREDICT_AI_CORE_PASSPHRASE": COMPREDICT_AI_CORE_PASSPHRASE,
+                           "COMPREDICT_AI_CORE_BASE_URL": COMPREDICT_AI_CORE_BASE_URL,
+                           "COMPREDICT_AI_CORE_CALLBACK_URL": COMPREDICT_AI_CORE_CALLBACK_URL}
 
         self.check = self.data_mongodb = self.request_table = self.data = self.forecasting_table_data = self.result = \
             self.forcaster = self.callback_param = {}
@@ -27,19 +33,16 @@ class ForecastPipelineProcess():
         self.tables = {"FORECASTING": "forecasting", "REQUEST": "requests"}
         self.table_names = dict(COMPONENT_DAMAGES="component_damages", VEHICLES="vehicles",
                                 COMPONENT_TYPE_VEHICLE="component_type_vehicle")
-
+        self.BENCHMARK = int(os.environ["BENCHMARK"])
         self.request_count, self.success_count, self.temp = 0, 0, []
 
-    def process(self):
-        result = Data_prep_pipeline(host=self.env('HOST'), user=self.env('USER'), password=self.env('PASSWORD'),
-                                    port=int(self.env('PORT')), database=self.env('DATABASE'), tables=self.table_names)
+    def process(self, connection=None):
+        check, result = connection
 
         results = result.result()
 
         results[0].rename(columns={'_id': 'idX'}, inplace=True)
         results[0]['idX'] = results[0]['idX'].astype('str')
-
-        check = Mongodb_Connect(host=self.env('HOST'), database=self.env('DATABASE'))
 
         try:
             forcaster = check.select(self.tables["FORECASTING"])
@@ -70,7 +73,7 @@ class ForecastPipelineProcess():
 
                 data['update_date_at'] = pd.to_datetime(data['update_date_at'])
 
-                data = data[(data['Max_Km'] - data['latest_trip_mileage']) > BENCHMARK]  # int(self.env('BENCHMARK'))]
+                data = data[(data['Max_Km'] - data['latest_trip_mileage']) > self.BENCHMARK]
                 data = data[(data['updated_at'] - data['update_date_at']).dt.total_seconds() / 3600 > 0]
                 data.sort_values(by=['updated_at'], inplace=True, ascending=False)
 
@@ -87,18 +90,24 @@ class ForecastPipelineProcess():
 
         return [check, data, results[1]]
 
-    def forecast(self):
-        count = 0
-        processdata = self.process()
+    def forecast(self, context=None, processdata=None):
 
         check, data, postgresdb = processdata
 
         forecast = dict()
         data_forecast = Forecast(self.api_config)
 
+        TIMEOUT = int(os.environ["TIMEOUT"])
+
         if not data.empty:
 
             for index, row in data.iterrows():
+
+                print((context.get_remaining_time_in_millis() / 1000))
+                if (context.get_remaining_time_in_millis() / 1000) <= TIMEOUT:
+                    raise Exception("Less Than 10 Seconds for Timeout")
+                print(index, "########################################################################\n")
+
                 forecast["data"] = row
                 data_forecast.forecast_checker(forecast=forecast)
 
@@ -123,9 +132,6 @@ class ForecastPipelineProcess():
                 callback_param = data_mongodb["callback_param"]
 
                 print("FORECAST/REQUEST DATA INJECTION FOR SINGLE RECORD FIRST TIME")
-                if count == 2:
-                    break
-                count += 1
 
         else:
 
@@ -133,8 +139,13 @@ class ForecastPipelineProcess():
 
         print("callback_param: ", callback_param)
 
-        check.close()
-        postgresdb.close()
-
-        # return data
         return postgresdb
+
+    def dbconnection(self, HOST=None, USER=None, PASSWORD=None, PORT=None, DATABASE=None):
+
+        result = Data_prep_pipeline(host=HOST, user=USER, password=PASSWORD,
+                                    port=PORT, database=DATABASE, tables=self.table_names)
+
+        check = Mongodb_Connect(host=HOST, database=DATABASE)
+
+        return check, result
