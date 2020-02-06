@@ -34,9 +34,10 @@ class ForecastPipelineProcess:
         self.table_names = dict(COMPONENT_DAMAGES="component_damages", VEHICLES="vehicles",
                                 COMPONENT_TYPE_VEHICLE="component_type_vehicle")
         self.BENCHMARK = int(os.environ["BENCHMARK"])
-        self.request_count, self.success_count, self.temp = 0, 0, []
+        self.request_count, self.success_count = 0, 0
 
     def process(self, connection=None):
+
         check, result = connection
 
         results = result.result()
@@ -46,11 +47,10 @@ class ForecastPipelineProcess:
 
         try:
             forcaster = check.select(self.tables["FORECASTING"])
-            if forcaster != {}:
-                for document in forcaster:
-                    self.temp.append(document)
+            temp = list(forcaster)
 
-                forcasting = json_normalize(self.temp)
+            if temp is not []:
+                forcasting = json_normalize(temp)
                 forcasting.rename(columns={'damage_id': 'idX', "damage_type_id": "damages_types"}, inplace=True)
                 forcasting['idX'] = forcasting['idX'].astype('str')
 
@@ -61,13 +61,8 @@ class ForecastPipelineProcess:
                     results[0].at[x, 'Max_Km'] = row["mileages"][-1]
 
                 data = pd.merge(results[0], forcasting, on=['idX', 'damages_types'], how='left')
-                data.drop(columns="updated_at_y", inplace=True)
-                data.rename(columns={'updated_at_x': 'updated_at'}, inplace=True)
 
                 data['update_date_at'].fillna('1900-01-01 00:00:00', inplace=True)
-                for column in data.keys()[9:23]:
-                    isnull = data[column].isnull()
-                    data.loc[isnull, [column]] = [[[0]] * isnull.sum()]
 
                 data.fillna(0, inplace=True)
 
@@ -81,11 +76,6 @@ class ForecastPipelineProcess:
         except:
 
             data = results[0]
-            data.drop(columns="updated_at_y", inplace=True)
-            data.rename(columns={'updated_at_x': 'updated_at'}, inplace=True)
-            for column in data.keys()[9:23]:
-                isnull = data[column].isnull()
-                data.loc[isnull, [column]] = [[[0]] * isnull.sum()]
             data.fillna(0, inplace=True)
 
         return [check, data, results[1]]
@@ -126,7 +116,7 @@ class ForecastPipelineProcess:
 
                 request = dict(table=self.tables["REQUEST"], data=request_table)
                 print(request)
-                # postgresdb.insert(data=request)
+                postgresdb.insert(data=request)
                 self.request_count += 1
                 print("request_count: ", self.request_count)
                 callback_param = data_mongodb["callback_param"]
@@ -134,17 +124,16 @@ class ForecastPipelineProcess:
                 print("FORECAST/REQUEST DATA INJECTION FOR SINGLE RECORD FIRST TIME")
 
         else:
-
+            callback_param = dict()
             print("NO CHANGES FOR FORCASTING")
 
         print("callback_param: ", callback_param)
 
         return postgresdb
 
-    def dbconnection(self, HOST=None, USER=None, PASSWORD=None, PORT=None, DATABASE=None):
-
+    def dbconnection(self, HOST=None, USER=None, PASSWORD=None, PORT=None, DATABASE=None, condition=None):
         result = Data_prep_pipeline(host=HOST, user=USER, password=PASSWORD,
-                                    port=PORT, database=DATABASE, tables=self.table_names)
+                                    port=PORT, database=DATABASE, tables=self.table_names, condition=condition)
 
         check = Mongodb_Connect(host=HOST, database=DATABASE)
 

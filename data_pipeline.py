@@ -7,13 +7,19 @@ from postgres import Postgres_Connect
 
 class Data_prep_pipeline:
 
-    def __init__(self, host=None, user=None, password=None, port=None, database=None, tables=None):
+    def __init__(self, host=None, user=None, password=None, port=None, database=None, tables=None, condition=None):
+        self._condition = condition
         self._vehicle_data = Postgres_Connect(host=host, user=user, password=password, port=port, database=database)
         self._check = Mongodb_Connect(host=host, database=database)
         self._data = self.data_prep(tables=tables)
 
     def data_prep(self, tables=None):
-        vehicle = pd.DataFrame(self._vehicle_data.select(tables["VEHICLES"]))
+
+        vehicle = None
+        if self._condition is not None:
+            vehicle = pd.DataFrame(self._vehicle_data.selectwhere(tables["VEHICLES"], condition=self._condition))
+        else:
+            vehicle = pd.DataFrame(self._vehicle_data.select(tables["VEHICLES"]))
         component_type_vehicle = pd.DataFrame(self._vehicle_data.select(tables["COMPONENT_TYPE_VEHICLE"]))
 
         vec, com = vehicle.iloc[:, [0, 1, 6, 10]], component_type_vehicle.iloc[:, [0, 1, 2]]
@@ -27,6 +33,12 @@ class Data_prep_pipeline:
         columns_todelete = [x for x in components_damages.columns.to_list() if
                             str(x).endswith("lower_damage") | str(x).endswith("upper_damage")]
         components_damages.drop(columns_todelete, axis=1, inplace=True)
+
+        if 'created_at' in components_damages.columns.to_list():
+            components_damages.drop('created_at', axis=1, inplace=True)
+        if 'updated_at' in components_damages.columns.to_list():
+            components_damages.drop('updated_at', axis=1, inplace=True)
+
         components_damages_TRIM = components_damages
 
         row_expansion = pd.DataFrame.from_records(components_damages_TRIM.damages_types.tolist()).stack().reset_index(

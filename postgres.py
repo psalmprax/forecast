@@ -30,6 +30,13 @@ class Postgres_Connect:
 
         return self._result["cursor"].fetchall()
 
+    def selectwhere(self, table=None, condition=None):
+
+        postgres_select_query = '''select * from public.%s  where public.%s."user_id"=%i ''' % (table, table, condition)
+        self._result["cursor"].execute(postgres_select_query)
+
+        return self._result["cursor"].fetchall()
+
     def insert(self, data=None):
         col = list(data["data"].keys())
         val = list(data["data"].values())
